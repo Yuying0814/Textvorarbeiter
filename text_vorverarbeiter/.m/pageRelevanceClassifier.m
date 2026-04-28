@@ -28,23 +28,23 @@ function [systemPrompt, searchRange] = setClassifier(pages,option)
     option = lower(option);
     switch option
         case 'toc'
-            systemPrompt = fileread("prompt_tocVerifier.txt");
+            systemPrompt = fileread("prompt_tocClassifier.txt");
             lastPage = ceil(0.3*numel(pages));
             searchRange = 1:lastPage;
         case 'register'
-            systemPrompt = fileread("prompt_regVerifier.txt");
+            systemPrompt = fileread("prompt_regClassifier.txt");
             lastPage = numel(pages);
             searchRange = 1:lastPage;
         case 'functional description'
-            systemPrompt = fileread("prompt_funVerifier.txt");
+            systemPrompt = fileread("prompt_funClassifier.txt");
             lastPage = numel(pages);
             searchRange = 1:lastPage;
         case 'communications interface'
-            systemPrompt = fileread("prompt_comVerifier.txt");
+            systemPrompt = fileread("prompt_comClassifier.txt");
             lastPage = numel(pages);
             searchRange = 1:lastPage;        
         case 'coding example'
-            systemPrompt = fileread("prompt_codingVerifier.txt");
+            systemPrompt = fileread("prompt_codingClassifier.txt");
             lastPage = numel(pages);
             searchRange = 1:lastPage; 
         otherwise

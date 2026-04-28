@@ -21,6 +21,7 @@ function [regIdx,result] = findPageRanges(pages, option)
         
         titleCount = searchKeywords(text,keywords.title);
         featureCounts = searchKeywords(text,keywords.feature);
+        disp(i); %-------------------debug---------------------------
         titleLike = titleCount ~=0;
         if titleLike && firstTitleLikePage ==0
             firstTitleLikePage = i;
@@ -63,7 +64,7 @@ function keywords = selectKeyword(option)
                 'writable', ...
                 '(?<!all rights )\breserved\b', ...
                 '0x[0-9a-f]{2}', ...
-                '[0-9a-f]{2}h', ...
+                '\b[0-9a-fA-F]{2}h\b', ...
                 '(?:[01]{4}\s?){2,4}'
             };
         case 'functional description'
@@ -122,8 +123,8 @@ function count = searchKeywords(text,keywords)
     for i=1:numel(keywords)
         match = regexp(text,keywords{i},'lineanchors');
         count = count + numel(match);
-        % match = regexp(text,keywords{i},'match'); % debug
-        % disp(match); % debug
+        match = regexp(text,keywords{i},'match'); % ------------debug
+        disp(match); % -----------------------------------------debug
     end
 end
 
