@@ -7,7 +7,7 @@ apiKey = getenv("MistralOCR_API_KEY");
 Text = [];
 fileID = "";
 payloadPath = fullfile(tempdir, 'ocr_payload.json');
-outputPath = fullfile(tempdir, 'ocr_output.json');
+outputPath = fullfile(pwd, 'ocr_output.json');
 if ~isfile(pdfPath)
     error('PDF file not found: %s', pdfPath);
 end
