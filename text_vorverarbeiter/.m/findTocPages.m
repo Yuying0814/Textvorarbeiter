@@ -9,186 +9,183 @@ function [tocIdx,outPages] = findTocPages(pages)
 %   outPages (struct): Updated page array with per-page TOC scores and
 %       repaired markdown content when OCR line reconstruction succeeds.
 
-    nPages = numel(pages);
-    first20PercentPages = 1:ceil(0.2*nPages);
-    last20PercentPages = ceil(0.8*nPages):nPages;
-    searchRange = [first20PercentPages last20PercentPages];
+
+    %% Initialisation
     titlePage = -999;
     hasTitle = false;
     tocIdx = [];
-    fixedBuffer = cell(1,nPages);
-
-    % Initialize the TOC-like score for all pages
-    for k = 1:numel(pages)
-        pages(k).TocLikeScore = 0;
-    end
-
+    fixedBuffer = cell(1,numel(pages));
+    scoresArray = zeros(1,numel(pages));
+    [pages.toclike_scores] = deal(0);
+    
+    %% Define the TOC search range as the first 20% and the last 20% of pages.
+    nPages = numel(pages);
+    first20PercentPages = 1:ceil(0.2*nPages);
+    last20PercentPages = ceil(0.8*nPages):nPages;
+    searchRange = unique([first20PercentPages last20PercentPages], 'stable');
+    
     for i = searchRange
-        % Split the page markdown into lines for pattern analysis
+        %% Split the page markdown into lines for analysis
         text = pages(i).markdown;
         lines = text2lines(text);
         nLines = numel(lines);
 
-        %% Detect a TOC heading on the current page, e.g., "Contents"
-        scoresTitle = 0;
-        titleFound = false;
+        %% Detect a TOC title on the current page, e.g., "Contents", and record its line index and page number.   
+        isTitlePage = false;
         tocTitleLineIndex = 0;
 
         if ~hasTitle
-            for j = 1:numel(lines)
-                thisLine = lower(lines{j});
-                titleFound = detectTocTitle(thisLine);
-                if titleFound
-                    hasTitle = true;
-                    scoresTitle = 1;
-                    tocTitleLineIndex = j;
-                    titlePage = i;
-                    break;
-                end
+            lowerLines = cellfun(@lower, lines, 'UniformOutput', false); %
+            isDetected = cellfun(@detectTocTitle, lowerLines);
+
+            if any(isDetected)
+                hasTitle = true;
+                isTitlePage = true;
+                tocTitleLineIndex = find(isDetected, 1, 'first');
+                titlePage = i;
             end
         end
 
-        % Count TOC-like lines, e.g., section number + title + dot leaders + page number
-        patternLineCount = detectTocPattern(lines);
+        %% Count TOC-like lines, e.g., section number + title + dot leaders + page number
+        usedLines = lines;
+        counts = countTocLikeLines(usedLines);
+        
+        %% Pre-fix the protentially fragmented OCR output, and then count TOC-like lines
+        usedFixedLines = {};
+        preFixedLines = preFixTocLines(usedLines,tocTitleLineIndex);
+        preFixedCounts = countTocLikeLines(preFixedLines);
+        
 
-        % If a TOC heading is detected but no TOC-like entries are found,
-        % the OCR output may be fragmented. Attempt line reconstruction and
-        % re-evaluate the page.
-        fixedLines = {};
-
-        if any(i == [titlePage:titlePage+5]) && patternLineCount == 0
-            fixedLines = fixTocPages(lines, tocTitleLineIndex);
-            patternLineCount = detectTocPattern(fixedLines);
-        end
-        if patternLineCount>0
-        disp(patternLineCount); % -------------------------------------debug------------------------------------
-        disp(nLines);
-        disp(i);
-        end
-        %% If a page contains both a TOC heading and TOC-like entries,
-        % use the detected entry count as the reference count for
-        % subsequent page scoring.
-
-        if titleFound && patternLineCount ~= 0
-            tocReferenceCount = patternLineCount;
-        else
-            tocReferenceCount = nLines;
+        if counts < preFixedCounts  % select a better result
+            usedFixedLines = preFixedLines;
+            usedLines = preFixedLines;
+            counts = preFixedCounts;
+            %disp('preFixed'); %---------------------debug------------------------------
+            %disp(i);
         end
 
         %% Compute the final TOC-like score
         scores = 0;
-        scoresToc = scoreToc(patternLineCount, nLines);
+        nLines = numel(usedLines);
 
-        % Total TOC-like score for the current page
-        scores = scoresTitle + scoresToc;
+        if isTitlePage
+            scores = scores + 1;
+        end
 
-        %% Store outputs
-        pages(i).TocLikeScore = scores;
-        if scores > 0.1
-            tocIdx = [tocIdx i];
-            % Replace the original markdown only when OCR reconstruction
-            % produces non-empty lines and improves TOC-pattern detection.
-            if ~isempty(fixedLines) && patternLineCount > 5
-                fixedContent = '';
-                for j = 1:tocTitleLineIndex
-                    fixedContent = [fixedContent lines{j} newline];
-                end
-                for j = 1:numel(fixedLines)
-                    fixedContent = [fixedContent fixedLines{j} newline];
-                end
-                fixedBuffer{i} = fixedContent;
-            end
+        if nLines>0
+            scores = scores + counts/nLines;
+        end
+
+        scoresArray(i) = scores;
+        
+        %% Save the result of fix-functions only when the result of fix-functions is adopted and improves TOC-pattern detection.
+        if ~isempty(usedFixedLines)
+            fixedContent = cellfun(@(x) [x newline],usedFixedLines,'UniformOutput',false);
+            fixedBuffer{i} = [fixedContent{:}];             
+        end
+    end
+    
+    %% Filter the TOC page range based on scoresArray  
+    threshold = 0.1;
+    tocIdx = findBestSegment(scoresArray,threshold);
+       
+    if ~isempty(tocIdx)
+
+        if hasTitle
+            tocIdx = tocIdx(tocIdx>=titlePage); % pageRange must start from the TOC title page.
+        end
+        
+        nextPage = tocIdx(end) + 1;
+        if nextPage <= nPages && scoresArray(nextPage) > 0 
+            tocIdx = [tocIdx nextPage]; % Include one subsequent page with a score greater than 0.   
         end
     end
 
-    % Refine TOC page indices using low-score consecutive-page stopping
-    % rule, which means it's impossible that 2 consecutive pages have few
-    % toc entries
-    scoresArray = [pages(1:nPages).TocLikeScore];
-    [~,maxIdx] = max(scoresArray);
-    stopPage = inf;
+    %% 
+    isNonEmpty = ~cellfun(@isempty, fixedBuffer(tocIdx));
+    validIdx = tocIdx(isNonEmpty);
 
-    for i = maxIdx:nPages-1
-        isLowPair = scoresArray(i) > 0 && scoresArray(i) <= 0.2 && ...
-            scoresArray(i+1) > 0 && scoresArray(i+1) <= 0.2;
-        if isLowPair
-            stopPage = i + 1; % keep this page, exclude pages after it
-            break;
-        end
+    if ~isempty(validIdx)
+        [pages(validIdx).markdown] = fixedBuffer{validIdx};
     end
 
-    if isfinite(stopPage)
-        tocIdx = tocIdx(tocIdx <= stopPage);
-    end
-
-    for i = 1:numel(tocIdx)
-        pageIdx = tocIdx(i);
-        if ~isempty(fixedBuffer{pageIdx})
-            pages(pageIdx).markdown = fixedBuffer{pageIdx};
-        end
-    end
-
+    %% Output
+    scoreCells = num2cell(scoresArray);
+    [pages.toclike_scores] = scoreCells{:};
     outPages = pages;
 end
 
-function scoresToc = scoreToc(patternLineCount,nLines)
-% Compute a TOC-like score from the number of matched TOC-pattern lines.
-    scoresToc = patternLineCount/nLines;
-
-end
-
-function fixedLines = fixTocPages(lines, matchedLine)
-% Reconstruct TOC-like entries when OCR splits one entry across multiple lines.
-
-    entryLine = '';
-    idx = 1;
-    fixedLines = {};
-    hasTocBegin = false;
-
-    for j = matchedLine + 1:numel(lines)
-        thisLine = lines{j};
-        matchPageNum = matchPattern(thisLine, '^\d+$'); % Detect a standalone page number
-        matchHtmlTitle = matchPattern(thisLine, '^#');  % Detect a heading-like title line
-
-        if matchHtmlTitle            
-            if  hasTocBegin && ~isempty(strtrim(entryLine))
-            % Store the previous incomplete TOC line before starting a new one    
-                fixedLines{idx} = entryLine;
-                idx = idx + 1;
-            end
-            % Build toc-entry line
-            entryLine = strtrim(thisLine);
-            hasTocBegin = true;
-
-        elseif matchPageNum && hasTocBegin
-            % Close the current TOC line when a trailing page number is found
-            entryLine = [entryLine '... ' strtrim(thisLine)];
-            fixedLines{idx} = entryLine;
-            idx = idx + 1;
-            entryLine = '';
-            hasTocBegin = false;
-
+function tocIdx = findBestSegment(scoresArray,threshold)
+%maximum scoring contiguous subsequence
+    scoresArray = scoresArray - threshold;
+    currentStart = 1;
+    bestStart = 1;
+    bestEnd = 1;
+    currentSum = scoresArray(1);
+    bestSum = scoresArray(1);
+    
+    for i=2:numel(scoresArray)
+        if currentSum < 0
+            currentSum = scoresArray(i);
+            currentStart = i;
         else
-            
-            if hasTocBegin
-                % Append continuation text to the current TOC line
-                entryLine = [entryLine ' ' strtrim(thisLine)];
-            else
-                % Preserve unrelated lines as independent lines
-                fixedLines{idx} = thisLine;
-                idx = idx + 1;
-            end
+            currentSum = currentSum + scoresArray(i);
+        end
+
+        if currentSum > bestSum
+            bestSum = currentSum;
+            bestStart = currentStart;
+            bestEnd = i;
         end
     end
 
-    % Preserve the last reconstructed line if it does not end with a page number
-    if hasTocBegin && ~isempty(strtrim(entryLine))
-        fixedLines{idx} = entryLine;
+    if bestSum >= 0
+        tocIdx = bestStart:bestEnd;
+    else 
+        tocIdx = [];
     end
+end
 
-    % Remove empty elements after reconstruction
-    if ~isempty(fixedLines)
-        blankMaskFixed = cellfun(@isempty, strtrim(fixedLines));
-        fixedLines = fixedLines(~blankMaskFixed);
+function tocLikeCounts = countTocLikeLines(lines)
+% Count TOC-like lines while enforcing nondecreasing ending page numbers.
+
+    tocLikeCounts = 0;
+    pageNums = [];
+    for i = 1:numel(lines)
+        thisLine = lines{i};
+        if ~detectTocEntry(thisLine)
+            continue;
+        end
+       % disp(thisLine); %-----------------------debug-------------------
+        token = regexp(thisLine, '(\d+)\s*$', 'tokens', 'once');
+        pageNums = [pageNums str2double(token{1})];
     end
+    
+    if numel(pageNums) <= 1
+        tocLikeCounts = numel(pageNums);
+        return
+    end
+    
+    monotonicMask = diff(pageNums) >= 0;
+    monotonic = sum(monotonicMask)/numel(monotonicMask);
+    tocLikeCounts = round(numel(pageNums)*monotonic);
+end
+
+function fixedLines = preFixTocLines(lines,matchedLine)
+    for i = matchedLine+1:numel(lines)-1
+        thisLine = lines{i};
+        if isempty(thisLine)
+            continue
+        end
+        nextLine = lines{i+1};
+        if ~detectTocEntry(thisLine) && ~detectTocEntry(nextLine)
+            newLine = [thisLine ' ... ' nextLine];
+            if detectTocEntry(newLine)
+                lines{i} = newLine;
+                lines{i+1} = '';
+                %disp(newLine); % -----------------------debug----------------
+            end
+        end
+    end
+    fixedLines = lines(~cellfun('isempty',lines));
 end
