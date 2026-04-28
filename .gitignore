@@ -1,1 +1,5 @@
 .env
+*.mat
+*.json
+draft.mlx
+deepfix.txt
