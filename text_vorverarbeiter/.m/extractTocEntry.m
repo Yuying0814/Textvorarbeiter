@@ -8,7 +8,7 @@ function tocEntries = extractTocEntry(tocPages)
     sectionStart = false;
     
     for i=1:numel(tocPages)
-        text = tocPages(i).markdown;
+        text = extractTextFrom(tocPages(i));
         pageIdx = tocPages(i).index;
         
         lines = text2lines(text);

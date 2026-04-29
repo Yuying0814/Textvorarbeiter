@@ -26,7 +26,7 @@ function [tocIdx,outPages] = findTocPages(pages)
     
     for i = searchRange
         %% Split the page markdown into lines for analysis
-        text = pages(i).markdown;
+        text = extractTextFrom(pages(i));
         lines = text2lines(text);
         nLines = numel(lines);
 
@@ -86,7 +86,7 @@ function [tocIdx,outPages] = findTocPages(pages)
     end
     
     %% Filter the TOC page range based on scoresArray  
-    threshold = 0.1;
+    threshold = 0.2;
     tocIdx = findBestSegment(scoresArray,threshold);
        
     if ~isempty(tocIdx)
@@ -156,7 +156,7 @@ function tocLikeCounts = countTocLikeLines(lines)
         if ~detectTocEntry(thisLine)
             continue;
         end
-       % disp(thisLine); %-----------------------debug-------------------
+        disp(thisLine); %-----------------------debug-------------------
         token = regexp(thisLine, '(\d+)\s*$', 'tokens', 'once');
         pageNums = [pageNums str2double(token{1})];
     end
