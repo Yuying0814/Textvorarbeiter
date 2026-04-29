@@ -35,18 +35,18 @@ function [systemPrompt, searchRange] = setClassifier(pages,option)
             systemPrompt = fileread("prompt_regClassifier.txt");
             lastPage = numel(pages);
             searchRange = 1:lastPage;
-        case 'functional description'
-            systemPrompt = fileread("prompt_funClassifier.txt");
-            lastPage = numel(pages);
-            searchRange = 1:lastPage;
-        case 'communications interface'
-            systemPrompt = fileread("prompt_comClassifier.txt");
-            lastPage = numel(pages);
-            searchRange = 1:lastPage;        
-        case 'coding example'
-            systemPrompt = fileread("prompt_codingClassifier.txt");
-            lastPage = numel(pages);
-            searchRange = 1:lastPage; 
+        % case 'functional description'
+        %     systemPrompt = fileread("prompt_funClassifier.txt");
+        %     lastPage = numel(pages);
+        %     searchRange = 1:lastPage;
+        % case 'communications interface'
+        %     systemPrompt = fileread("prompt_comClassifier.txt");
+        %     lastPage = numel(pages);
+        %     searchRange = 1:lastPage;        
+        % case 'coding example'
+        %     systemPrompt = fileread("prompt_codingClassifier.txt");
+        %     lastPage = numel(pages);
+        %     searchRange = 1:lastPage; 
         otherwise
            error(['String variable "option" must be one of: ' ...
     'toc, register, functional description, communications interface, coding example.']);

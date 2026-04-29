@@ -181,16 +181,17 @@ Fixed structure: String only.
 
 ## General Rules
 
-1. Use only the information explicitly present in the provided content.
-2. Do not guess, do not infer from general knowledge, and do not invent missing details.
-3. Do not use prior knowledge about the device, manufacturer, protocol, or common register conventions unless the information is explicitly written in the provided content.
-4. Do not perform open-ended reasoning. Do not explain your thought process.
-5. Fill the output as completely as possible, but only with content directly supported by the provided text, tables described in the provided pages.
-6. If a value is not explicitly available and cannot be derived by exact deterministic conversion, leave it empty instead of guessing.
-7. Keep all descriptions concise, factual, and source-grounded.
-8. Preserve the original register order from the provided content whenever possible.
-9. If the same register appears across multiple provided pages, merge the information into a single register entry and include all supporting source pages.
-10. Prefer register tables, bit tables, register maps, and explicit legends over surrounding prose when both are available.
+1. (Important)First search for all register names, ensuring the completeness of the register count before filling in any other output.
+2. Use only the information explicitly present in the provided content.
+3. Do not guess, do not infer from general knowledge, and do not invent missing details.
+4. Do not use prior knowledge about the device, manufacturer, protocol, or common register conventions unless the information is explicitly written in the provided content.
+5. Do not perform open-ended reasoning. Do not explain your thought process.
+6. Fill the output as completely as possible, but only with content directly supported by the provided text and the tables described in the provided pages.
+7. If a value is not explicitly available and cannot be derived by exact deterministic conversion, leave it empty instead of guessing.
+8. Keep all descriptions concise, factual, and source-grounded.
+9. Preserve the original register order from the provided content whenever possible.
+10. If the same register appears across multiple provided pages, merge the information into a single register entry and include all supporting source pages.
+11. Prefer register tables, bit tables, register maps, and explicit legends over surrounding prose when both are available.
 
 ## Additional Constraints
 
