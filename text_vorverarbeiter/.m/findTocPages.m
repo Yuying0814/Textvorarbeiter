@@ -156,7 +156,7 @@ function tocLikeCounts = countTocLikeLines(lines)
         if ~detectTocEntry(thisLine)
             continue;
         end
-        disp(thisLine); %-----------------------debug-------------------
+        %disp(thisLine); %-----------------------debug-------------------
         token = regexp(thisLine, '(\d+)\s*$', 'tokens', 'once');
         pageNums = [pageNums str2double(token{1})];
     end
