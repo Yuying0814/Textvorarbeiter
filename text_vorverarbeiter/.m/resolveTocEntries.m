@@ -8,6 +8,11 @@ function pageIdx = resolveTocEntries(tocEntries)
 % Output:
 %   pageRange (cell): Merged page ranges that are likely to contain
 %       register maps or register descriptions.
+    
+    if isempty(tocEntries)
+        pageIdx = [];
+        return
+    end
 
     %% Define patterns related to register maps and register descriptions.
     patterns = { ...
@@ -28,10 +33,7 @@ function pageIdx = resolveTocEntries(tocEntries)
         '\<reg\>', ...
         '\<reg\.' ...
     };
-    if isempty(tocEntries)
-        pageIdx = [];
-        return
-    end
+
     %% Initialization
     currentIdx = 1;
     keepLine = false(1, numel(tocEntries));
