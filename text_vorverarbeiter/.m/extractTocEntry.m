@@ -1,6 +1,11 @@
 function tocEntries = extractTocEntry(tocPages)
 %UNTITLED5 Summary of this function goes here
 %   Detailed explanation goes here
+    if isempty(tocPages)
+        tocEntries = struct([]);
+        return
+    end
+    
     allLines = {};
     tocEntries = struct('section_level',{},'section',{},'content',{},'page_number',{},'continuation_lines',{},'source_index',{});
     sourceIdx = [];
