@@ -92,6 +92,7 @@ function pageIdx = resolveTocEntries(tocEntries)
 
     %% Return an empty result when no register-related entry is found.
     if ~any(keepLine)
+        pageIdx = [];
         pageRange = {};
         return
     end
