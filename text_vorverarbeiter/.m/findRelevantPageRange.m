@@ -23,7 +23,7 @@ function [pageIdx,summaryPageIdx,pageScores]= findRelevantPageRange(pages,option
     tempRanges = selectRange(pageScores);
 
     if isempty(tempRanges)
-        pageRanges = {};
+        pageIdx = [];
         return
     end
 
@@ -140,6 +140,11 @@ end
 
 function pageRanges = selectRange(pageScores)
 % Extract page ranges while allowing gaps of up to m consecutive low-score pages.
+    
+    if isempty(pageScores) || max(pageScores) <= 0
+        pageRanges = {};
+        return
+    end
 
     m = 2; % Maximum number of consecutive zero-valued pages allowed.
     n = 2; % Mimimum number of consecutive nonzero-valued pages allowed.
