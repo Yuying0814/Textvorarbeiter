@@ -2,6 +2,10 @@ function  outPages = removeHeaderFooter(pages)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
     % Identify header and footer like lines
+    if isempty(pages)
+        error('No pages input');
+    end
+    
     repeatedLines = findRepeatedLines(pages);
     outPages = pages;
 

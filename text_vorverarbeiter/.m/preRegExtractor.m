@@ -1,6 +1,11 @@
 function registers = preRegExtractor(pages)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
+    if isempty(pages)
+        registers = struct([]);
+        return
+    end
+
     loadenv(".env");
     apiKey = getenv("OPENAI_API_KEY");
     modelName = "gpt-5-mini";

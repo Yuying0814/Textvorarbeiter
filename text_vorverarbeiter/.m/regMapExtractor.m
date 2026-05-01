@@ -2,7 +2,8 @@ function regMapJson = regMapExtractor(pages,preRegisters)
 %UNTITLED13 Summary of this function goes here
 %   Detailed explanation goes here
     if isempty(pages)
-        error('No pages input');
+        warning('No pages input');
+        regMapJson = struct([]);
         return
     end
 %% build respond format of LLM output
@@ -92,7 +93,13 @@ modelName = "gpt-5-mini";
 systemPrompt = fileread("prompt_regMapExtractor.txt");
 
 pageContext= jsonencode(pages);
-regContent = jsonencode(preRegisters);
+
+if ~isempty(preRegisters)
+    regContent = jsonencode(preRegisters);
+else
+    regContent = 'no result from pre-extraction';
+end
+
 
 userPrompt = ['pages are provided as follows:' ...
 newline ...

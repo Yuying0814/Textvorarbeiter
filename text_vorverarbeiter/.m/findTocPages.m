@@ -8,7 +8,9 @@ function [tocIdx,outPages] = findTocPages(pages)
 %   tocIdx (double): Indices of pages classified as TOC-like.
 %   outPages (struct): Updated page array with per-page TOC scores and
 %       repaired markdown content when OCR line reconstruction succeeds.
-
+    if isempty(pages)
+        error('No pages input');
+    end
 
     %% Initialisation
     titlePage = -999;
