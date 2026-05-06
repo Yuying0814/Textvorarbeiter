@@ -5,7 +5,7 @@ function text = extractTextFrom(pages)
         error('No pages input');
     end
 
-    if ~isfield(pages,["markdown" "tables" "index") 
+    if ~isfield(pages,["markdown" "tables" "index"])
         error('Incomplete struct input');
         return
     end
